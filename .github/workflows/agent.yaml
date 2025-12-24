@@ -1,0 +1,23 @@
+name: Agent Logic CI
+
+on:
+  push:
+    paths:
+      - agent/**
+      - tests/**
+  pull_request:
+
+jobs:
+  test-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Unit tests
+        run: pytest tests/

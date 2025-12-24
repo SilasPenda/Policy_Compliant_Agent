@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from langchain_core.tools import Tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from src.utils import get_embedding_model, db_client_connect, get_latest_collection_version
+from src.utils import get_embedding_model, db_client_connect
 
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 
