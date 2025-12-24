@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import yaml
 import torch
@@ -71,24 +72,19 @@ def read_yaml(file_path):
     except Exception as e:
         print(f"Error reading YAML file: {e}")
         return None
-    
+
 
 def get_device():
     """
     Get the device to be used for tensor operations.
     Returns:
-        torch.device: The device to be used (CPU, CUDA, or MPS).
+        device: The device to be used (CPU, CUDA, or MPS).
     """
-
-    if platform.system() == "Darwin":
-        if torch.backends.mps.is_available():
-            return "mps"
-        
-    else:
-        if torch.cuda.is_available():
-            return "cuda"
-        else:
-            return "cpu"
+    # if torch.backends.mps.is_available():
+    #     return "mps"
+    if torch.cuda.is_available():
+        return "cuda"
+    return "cpu"
         
 
 def get_embedding_model(model_name="all-MiniLM-L6-v2"):
@@ -125,7 +121,7 @@ def get_llm(type="openai", model_name="gpt-4o"):
     return llm
 
 
-def db_client_connect(collection_name: str, vector_size: int = 1536):
+def db_client_connect(collection_name: str, vector_size: int = 384):
     """
     Connect to a client collection.
 
@@ -189,6 +185,48 @@ def get_device():
             return "cuda"
         else:
             return "cpu"
+        
+
+def get_latest_collection_version(client, base_name: str) -> int:
+    """
+    Returns the highest version number for collections named base_name_vN.
+    If none exist, returns 0.
+    """
+    pattern = re.compile(rf"^{base_name}_v(\d+)$")
+
+    versions = []
+
+    collections = client.get_collections().collections
+    for c in collections:
+        match = pattern.match(c.name)
+        if match:
+            versions.append(int(match.group(1)))
+
+    return max(versions) if versions else 0
+
+def get_next_collection_name(client, base_name: str) -> str:
+    latest_version = get_latest_collection_version(client, base_name)
+    next_version = latest_version + 1
+    return f"{base_name}_v{next_version}"
+
+
+def compute_confidence(structured):
+    score = 0.0
+
+    # Clear verdict
+    if structured.compliance_status.lower() in {"compliant", "non-compliant"}:
+        score += 0.5
+
+    # Evidence aligned with verdict
+    if structured.compliance_status == "Compliant" and structured.compliant_policies:
+        score += 0.3
+
+    # Supporting precedents
+    if structured.similar_documents:
+        score += min(0.04 * len(structured.similar_documents), 0.2)
+
+    return round(min(score, 1.0), 2)
+
 
 def evaluate_models(X_train, y_train, X_test, y_test, models, params ):
     try:

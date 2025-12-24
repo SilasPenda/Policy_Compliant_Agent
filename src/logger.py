@@ -8,20 +8,27 @@ os.makedirs(logs_path, exist_ok=True)
 
 LOG_FILE_PATH = os.path.join(logs_path, LOG_FILE)
 
+# Base logging config (file)
 logging.basicConfig(
     filename=LOG_FILE_PATH,
-    format="[ %(asctime)s ] %(lineno)d %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
+    format="[ %(asctime)s ] %(lineno)d %(name)s - %(levelname)s - %(message)s",
 )
 
-# Create a console handler to print logs to the terminal
+# Console handler
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(
+    logging.Formatter("[ %(asctime)s ] - %(levelname)s - %(message)s")
+)
 
-# Set the format for logs displayed in the terminal
-console_formatter = logging.Formatter("[ %(asctime)s ] - %(levelname)s - %(message)s")
-console_handler.setFormatter(console_formatter)
+# Attach console handler once
+root_logger = logging.getLogger()
+if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
+    root_logger.addHandler(console_handler)
 
-# Get the root logger and add the console handler to it
-root_logger = logging.getLogger('')
-root_logger.addHandler(console_handler)
+# Silence third-party noise
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("qdrant_client").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("langchain").setLevel(logging.WARNING)

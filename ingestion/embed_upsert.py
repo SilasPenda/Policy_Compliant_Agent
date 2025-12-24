@@ -1,132 +1,104 @@
 import os
-import re
 import sys
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+
+from typing import List, Dict, Any
 from dotenv import load_dotenv
-from qdrant_client import QdrantClient
-from qdrant_client.http import models as qmodels
+from qdrant_client import models as qmodels
 
 from src.exception import CustomException
 from src.logger import logging
 from src.utils import get_embedding_model
 
-load_dotenv()
+
+load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 
 class EmbedUpsert:
-    def __init__(self, url, api_key, collection_prefix):
-        self.pdf_dir = os.path.join(os.getcwd(), collection_prefix)
+    """
+    Handles embedding generation and batched upserts into Qdrant.
+    """
 
-        # Load sentence transformer model
+    def __init__(self, client):
+        self.client = client
         self.model = get_embedding_model()
 
-        # Qdrant setup
-        self.client = QdrantClient(
-            url=url,
-            api_key=api_key
-        )
-        self.collection_name = self.get_next_collection_name(self.client, collection_prefix)
-
-    def get_latest_collection_version(self, client, base_name: str) -> int:
+    def get_embeddings(self, texts: List[str]):
         """
-        Returns the highest version number for collections named base_name_vN.
-        If none exist, returns 0.
+        Generate embeddings for a list of texts.
         """
-        pattern = re.compile(rf"^{base_name}_v(\d+)$")
-
-        versions = []
-
-        collections = client.get_collections().collections
-        for c in collections:
-            match = pattern.match(c.name)
-            if match:
-                versions.append(int(match.group(1)))
-
-        return max(versions) if versions else 0
-    
-    def get_next_collection_name(self, client, base_name: str) -> str:
-        latest_version = self.get_latest_collection_version(client, base_name)
-        next_version = latest_version + 1
-        return f"{base_name}_v{next_version}"
-
-    def embedder(self,texts):
         try:
-            embeddings = self.model.encode(texts, show_progress_bar=True, batch_size=32)
-            return embeddings
-        
+            return self.model.encode(
+                texts,
+                show_progress_bar=True,
+                batch_size=32,
+            )
         except Exception as e:
             raise CustomException(e, sys)
-        
-    def upsert(self, texts, metadatas, ids, embeddings):
+
+    def _ensure_collection(self, collection_name: str, vector_size: int=384):
+        """
+        Create the collection if it does not already exist.
+        """
+        if self.client.collection_exists(collection_name):
+            return
+
+        self.client.create_collection(
+            collection_name=collection_name,
+            vectors_config=qmodels.VectorParams(
+                size=vector_size,
+                distance=qmodels.Distance.COSINE,
+            ),
+        )
+
+        logging.info(f"Created collection: {collection_name}")
+
+    def upsert(
+        self,
+        texts: List[str],
+        metadatas: List[Dict[str, Any]],
+        ids: List[str],
+        embeddings,
+        collection_name: str,
+        batch_size: int = 100,
+    ):
+        """
+        Upsert embeddings into Qdrant in safe, bounded batches.
+        """
         try:
             vector_size = embeddings.shape[1]
+            self._ensure_collection(collection_name, vector_size)
 
-            self.client.create_collection(
-                collection_name=self.collection_name,
-                vectors_config=qmodels.VectorParams(
-                    size=vector_size,
-                    distance=qmodels.Distance.COSINE,
-                ),
-            )
+            total_points = len(ids)
 
-            points = [
-                qmodels.PointStruct(
-                    id=ids[i],
-                    vector=embeddings[i],
-                    payload={
+            for start in range(0, total_points, batch_size):
+                end = min(start + batch_size, total_points)
+
+                points = [
+                    qmodels.PointStruct(
+                        id=ids[i],
+                        vector=embeddings[i].tolist(),
+                        payload={
                         "text": texts[i],
                         "metadata": {
                             **metadatas[i],
-                            "collection_version": self.collection_name,
+                            "collection_version": collection_name,
                             "active": True,
                         },
                     },
-                )
-                for i in range(len(texts))
-            ]
+                    )
+                    for i in range(start, end)
+                ]
 
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=points,
-            )
+                self.client.upsert(
+                    collection_name=collection_name,
+                    points=points,
+                )
 
             logging.info(
-                f"Upserted {len(texts)} points into {self.collection_name}"
+                f"Upserted {total_points} points into collection '{collection_name}'"
             )
 
         except Exception as e:
             raise CustomException(e, sys)
-
-            
-
-
-
-
-    
-    def upsert(self, texts, metadatas, ids, embeddings):
-        try:
-            vector_size = embeddings.shape[1]
-            self.client.recreate_collection(
-                collection_name=self.collection_name,
-                vectors_config=qmodels.VectorParams(size=vector_size, distance=qmodels.Distance.COSINE)
-            )
-
-            points = [
-                qmodels.PointStruct(
-                    id=ids[i],
-                    vector=embeddings[i],
-                    payload={
-                        "text": texts[i],
-                        "metadata": metadatas[i]
-                    }
-                )
-                for i in range(len(texts))
-            ]
-
-            self.client.upsert(collection_name=self.collection_name, points=points)
-
-            logging.info(f"Data ingestion completed successfully. Added {len(texts)} complaints to collection {self.collection_name}")    
-            
-        except Exception as e:
-            raise CustomException(e, sys)
-
-
+ 

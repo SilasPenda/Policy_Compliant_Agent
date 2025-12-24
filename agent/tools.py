@@ -1,18 +1,19 @@
 import os
 from dotenv import load_dotenv
-from langchain.schema import Document
-from langchain.tools import Tool
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.tools import Tool
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from src.utils import get_embedding_model, db_client_connect
+from src.utils import get_embedding_model, db_client_connect, get_latest_collection_version
 
-load_dotenv()
+load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 qdrant_url = os.getenv("QDRANT_URL")
 qdrant_api_key = os.getenv("QDRANT_API_KEY")
 
 policy_collection = os.getenv("POLICY_COLLECTION_NAME")
 contract_collection = os.getenv("CONTRACT_COLLECTION_NAME")
+
+embedding_model = get_embedding_model()
 
 
 def create_chunk_embeddings(document_pages: list):
@@ -26,8 +27,6 @@ def create_chunk_embeddings(document_pages: list):
     and then encodes these chunks into embeddings. The embeddings are returned as a list.
     """
 
-    model = get_embedding_model()
-
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -40,7 +39,7 @@ def create_chunk_embeddings(document_pages: list):
         if text:
             chunks.extend(splitter.split_text(text))
 
-    embeddings = model.encode(chunks, show_progress_bar=True, batch_size=32)
+    embeddings = embedding_model.encode(chunks, show_progress_bar=True, batch_size=32)
 
     return embeddings
 
@@ -59,13 +58,12 @@ def find_matching_policies(query: str, top_k: int=3):
         top_k (int): The number of top matching policies to return.
     """
 
-    model = get_embedding_model()
     client = db_client_connect(policy_collection)
 
-    query_embedding = model.encode(query).tolist()
+    query_embedding = embedding_model.encode(query).tolist()
 
     results = client.search(
-        collection_name="policy_collection",
+        collection_name=policy_collection,
         query_vector=query_embedding,
         limit=top_k,
         with_payload=True,
@@ -89,13 +87,12 @@ def find_similar_documents(query: str, top_k: int=3):
         top_k (int): The number of top similar documents to return.
     """
     
-    model = get_embedding_model()
     client = db_client_connect(policy_collection)
     # q_embedding = model.encode([query])[0]
-    query_embedding = model.encode(query).tolist()
+    query_embedding = embedding_model.encode(query).tolist()
 
     results = client.search(
-        collection_name="policy_collection",
+        collection_name=policy_collection,
         query_vector=query_embedding,
         limit=top_k,
         with_payload=True,
