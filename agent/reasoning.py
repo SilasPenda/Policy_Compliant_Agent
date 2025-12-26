@@ -1,4 +1,4 @@
-from langchain_classic.agents import create_tool_calling_agent, AgentExecutor
+from langchain.agents import create_tool_calling_agent, AgentExecutor
 
 from src.utils import get_llm
 from agent.templates import system_prompt

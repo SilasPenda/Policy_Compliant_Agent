@@ -220,6 +220,8 @@ def compute_confidence(structured):
     # Evidence aligned with verdict
     if structured.compliance_status == "Compliant" and structured.compliant_policies:
         score += 0.3
+    elif structured.compliance_status == "Non-Compliant" and structured.violated_policies:
+        score += 0.3
 
     # Supporting precedents
     if structured.similar_documents:

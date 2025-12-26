@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from langchain_core.tools import Tool
+from langchain.tools import Tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from src.utils import get_embedding_model, db_client_connect
