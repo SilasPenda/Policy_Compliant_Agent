@@ -10,7 +10,6 @@ from src.utils import get_device
 load_dotenv()
 
 
-
 @pytest.mark.skipif(
     not os.getenv("QDRANT_URL") or not os.getenv("QDRANT_API_KEY"),
     reason="Qdrant credentials not set"
@@ -56,6 +55,6 @@ def test_qdrant_retrieval():
     assert "metadata" in top_hit.payload, "Missing metadata in payload"
     
     # Cleanup
-    client.delete_collection(collection_name=collection_name)
+    # client.delete_collection(collection_name=collection_name)
 
 
