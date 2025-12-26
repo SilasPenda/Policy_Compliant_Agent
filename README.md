@@ -1,6 +1,6 @@
 # Policy_Compliant_Agent
 
-A smart AI-powered Compliance Auditor Assistant designed to analyze documents, extract relevant compliance information, and determine whether they meet specified policy standards such as GDPR. This tool leverages embeddings, similarity search, and LLMs to provide detailed compliance assessments based on custom policies and similar documents.
+A smart AI-powered Compliance Assistant designed to analyze documents, extract relevant compliance information, and determine whether they meet specified policy standards such as GDPR. This tool leverages embeddings, similarity search, and LLMs to provide detailed compliance assessments based on custom policies and similar documents.
 
 ---
 
@@ -11,7 +11,6 @@ A smart AI-powered Compliance Auditor Assistant designed to analyze documents, e
 - **Similar Document Reference:** Finds and compares similar documents to strengthen audit decisions.
 - **Compliance Decision:** Outputs a clear **Compliant** or **Non-Compliant** status with detailed explanations.
 - **Extensible Tools:** Easily integrate additional policy collections and compliance questions.
-- **Gradio UI:** User-friendly interface for uploading documents, entering queries, and viewing compliance reports.
 - **Dockerized:** Ready for containerized deployment.
 
 ---
@@ -27,20 +26,29 @@ A smart AI-powered Compliance Auditor Assistant designed to analyze documents, e
 
 ## Getting Started
 
+### Folder Structure
+- **.github/:** This folder contains the CI/CD commands
+- **agent/:** This dir contains all agent components including reasoning, tools, and API
+- **ingestion/:** This contains all components of the ingestion pipeline. This includes chunking, embedding and vector database insertion
+- **evals/:** This contains evaluation components
+- **src/:** This contains other utility files relevant for this project
+- **tests/:** This contains relevant files for testing the different components for this project
+
 ### Prerequisites
 
 - Python 3.11+
 - Docker (optional, for containerized deployment)
 - Access to OpenAI API or other LLM providers like Ollama
-- Vector database setup (e.g., ChromaDB)
+- Vector database setup (e.g., Qdrant, ChromaDB)
+- Act for git action simulaiton locally (https://github.com/nektos/act)
 
 ### Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/SilasPenda/Policy-Compliant-Auditing-Agent
-   cd policy-compliance-auditor
+   git clone https://github.com/SilasPenda/Policy-Compliance-Agent
+   cd policy-compliance-agent
 
 2. Create & activate virtual environment:
 
@@ -55,11 +63,25 @@ A smart AI-powered Compliance Auditor Assistant designed to analyze documents, e
    python -m pip install --upgrade pip
    pip install -r requirements.txt
 
-4. Create .env file and add OPEN_AI_KEY
+4. Create .env file and add relevant keys
 
-5. Using NB_1.ipynb, create collections for documents and policies (policy.yaml):
+5. Create *contracts* folder and add all contract documents to be added to vector database
 
-6. Start App
+6. Create *policies* folder and add all polices to be added to vector database
 
+7. Run tests
    ```bash
-   python app.py
+   pytest -v tests
+
+8. Insert contracts into database:
+   ```bash
+   python ingestion/contract_ingestor.py
+
+9. Insert policies into database:
+   ```bash
+   python ingestion/policy_ingestor.py
+
+10. Start API
+    ```bash
+    python agent/api.py
+
