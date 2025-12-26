@@ -82,18 +82,17 @@ def process():
         ), 200
 
     except Exception as e:
-        print(f"Error processing request: {e}")
-        # return jsonify(
-        #     {
-        #         "verdict": "unknown",
-        #         "policies": [],
-        #         "tools_used": [],
-        #         "similar_documents": [],
-        #         "reasoning": "",
-        #         "confidence": 0.0,
-        #         "error": str(e),
-        #     }
-        # ), 500
+        return jsonify(
+            {
+                "verdict": "unknown",
+                "policies": [],
+                "tools_used": [],
+                "similar_documents": [],
+                "reasoning": "",
+                "confidence": 0.0,
+                "error": str(e),
+            }
+        ), 500
 
     finally:
         if "pdf_path" in locals() and os.path.exists(pdf_path):
