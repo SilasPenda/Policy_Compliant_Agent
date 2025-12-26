@@ -12,7 +12,7 @@ from src.exception import CustomException
 from src.utils import get_next_collection_name
 
 
-load_dotenv(os.path.join(os.getcwd(), '.env'))
+load_dotenv()
 
 
 class ContractIngestor:

@@ -6,7 +6,8 @@ from sentence_transformers import SentenceTransformer
 
 from src.utils import get_device
 
-load_dotenv(os.path.join(os.getcwd(), '.env'))
+
+load_dotenv()
 
 
 

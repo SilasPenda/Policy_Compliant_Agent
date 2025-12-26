@@ -11,7 +11,7 @@ from src.logger import logging
 from src.utils import get_embedding_model
 
 
-load_dotenv(os.path.join(os.getcwd(), '.env'))
+load_dotenv()
 
 
 class EmbedUpsert:

@@ -5,7 +5,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from src.utils import get_embedding_model, db_client_connect
 
-load_dotenv(os.path.join(os.getcwd(), '.env'))
+load_dotenv()
 
 qdrant_url = os.getenv("QDRANT_URL")
 qdrant_api_key = os.getenv("QDRANT_API_KEY")

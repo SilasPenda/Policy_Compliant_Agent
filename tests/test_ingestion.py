@@ -7,7 +7,8 @@ from ingestion.chunking import Chunker
 from ingestion.embed_upsert import EmbedUpsert
 from src.utils import get_next_collection_name
 
-load_dotenv(os.path.join(os.getcwd(), '.env'))
+
+load_dotenv()
 
 
 # Fixture to provide chunked contract
@@ -36,8 +37,8 @@ def test_chunking(chunked_contract):
     reason="Qdrant credentials not set"
 )
 @pytest.mark.skipif(
-    not os.getenv("CONTRACT_COLLECTION_NAME"),
-    reason="Contract collection name not set"
+    not os.getenv("TEST_COLLECTION_NAME"),
+    reason="Test collection name not set"
 )
 
 
@@ -54,7 +55,7 @@ def test_ingestion(chunked_contract):
         api_key=qdrant_api_key
         )
     
-    collection_name = "test_collection"
+    collection_name = os.getenv("TEST_COLLECTION_NAME")
 
     embedder = EmbedUpsert(client)
     embeddings = embedder.get_embeddings(texts)

@@ -7,14 +7,15 @@ from dotenv import load_dotenv
 
 from src.utils import get_llm, db_client_connect
 
-load_dotenv(os.path.join(os.getcwd(), '.env'))
+
+load_dotenv()
 
 qdrant_url = os.getenv("QDRANT_URL")
 qdrant_api_key = os.getenv("QDRANT_API_KEY")
 llm_type = os.getenv("LLM_TYPE")
 model_name = os.getenv("MODEL_NAME")
 contract_collection = os.getenv("CONTRACT_COLLECTION_NAME")
-policy_collection = os.getenv("POLUCY_COLLECTION_NAME")
+policy_collection = os.getenv("POLICY_COLLECTION_NAME")
 
 
 def test_llm_connection():
